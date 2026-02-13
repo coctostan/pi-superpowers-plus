@@ -95,13 +95,6 @@ export class WorkflowTracker {
       }
     }
 
-    for (let i = 0; i < nextIdx; i++) {
-      const p = WORKFLOW_PHASES[i]!;
-      if (this.state.phases[p] === "pending") {
-        this.state.phases[p] = "skipped";
-      }
-    }
-
     for (const p of WORKFLOW_PHASES) {
       if (p !== phase && this.state.phases[p] === "active") {
         this.state.phases[p] = "complete";
@@ -114,6 +107,18 @@ export class WorkflowTracker {
     }
 
     return true;
+  }
+
+  skipPhase(phase: Phase): boolean {
+    if (this.state.phases[phase] !== "pending") return false;
+    this.state.phases[phase] = "skipped";
+    return true;
+  }
+
+  skipPhases(phases: Phase[]): boolean {
+    let changed = false;
+    for (const p of phases) changed = this.skipPhase(p) || changed;
+    return changed;
   }
 
   completeCurrent(): boolean {

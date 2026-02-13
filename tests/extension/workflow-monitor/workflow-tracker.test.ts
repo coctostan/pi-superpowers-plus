@@ -15,13 +15,26 @@ describe("WorkflowTracker", () => {
     for (const p of WORKFLOW_PHASES) expect(s.phases[p]).toBe("pending");
   });
 
-  test("advancing to a later phase marks earlier pending phases as skipped", () => {
+  test("advancing to a later phase does NOT mark earlier phases as skipped", () => {
     tracker.advanceTo("execute");
     const s = tracker.getState();
     expect(s.currentPhase).toBe("execute");
+    expect(s.phases.brainstorm).toBe("pending");
+    expect(s.phases.plan).toBe("pending");
+    expect(s.phases.execute).toBe("active");
+  });
+
+  test("skipPhase marks a pending phase as skipped", () => {
+    const changed = tracker.skipPhase("plan");
+    expect(changed).toBe(true);
+    expect(tracker.getState().phases.plan).toBe("skipped");
+  });
+
+  test("skipPhases skips multiple phases in one call", () => {
+    tracker.skipPhases(["brainstorm", "plan"]);
+    const s = tracker.getState();
     expect(s.phases.brainstorm).toBe("skipped");
     expect(s.phases.plan).toBe("skipped");
-    expect(s.phases.execute).toBe("active");
   });
 
   test("advanceTo is forward-only (no-op when going backwards)", () => {
