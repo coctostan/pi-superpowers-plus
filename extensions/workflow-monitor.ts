@@ -69,9 +69,23 @@ export default function (pi: ExtensionAPI) {
   };
 
   function parseTargetPhase(text: string): Phase | null {
-    const match = text.match(/^\s*\/skill:([^\s]+)/);
-    if (!match) return null;
-    return skillToPhase[match[1]] ?? null;
+    const lines = text.split(/\r?\n/);
+    let furthest: Phase | null = null;
+    let furthestIdx = -1;
+
+    for (const line of lines) {
+      const match = line.match(/^\s*\/skill:([^\s]+)/);
+      if (!match) continue;
+      const phase = skillToPhase[match[1]] ?? null;
+      if (!phase) continue;
+      const idx = WORKFLOW_PHASES.indexOf(phase);
+      if (idx > furthestIdx) {
+        furthest = phase;
+        furthestIdx = idx;
+      }
+    }
+
+    return furthest;
   }
 
   const boundaryToPhase: Record<TransitionBoundary, keyof typeof phaseToSkill> = {

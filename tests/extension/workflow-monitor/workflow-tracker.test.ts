@@ -30,6 +30,30 @@ describe("WorkflowTracker", () => {
     expect(tracker.getState().phases.plan).toBe("skipped");
   });
 
+  test("skipPhase marks an active phase as skipped", () => {
+    tracker.advanceTo("plan");
+    expect(tracker.getState().phases.plan).toBe("active");
+    const changed = tracker.skipPhase("plan");
+    expect(changed).toBe(true);
+    expect(tracker.getState().phases.plan).toBe("skipped");
+  });
+
+  test("skipPhase returns false for a complete phase", () => {
+    tracker.advanceTo("plan");
+    tracker.completeCurrent();
+    expect(tracker.getState().phases.plan).toBe("complete");
+    const changed = tracker.skipPhase("plan");
+    expect(changed).toBe(false);
+    expect(tracker.getState().phases.plan).toBe("complete");
+  });
+
+  test("skipPhase returns false for an already-skipped phase", () => {
+    tracker.skipPhase("plan");
+    const changed = tracker.skipPhase("plan");
+    expect(changed).toBe(false);
+    expect(tracker.getState().phases.plan).toBe("skipped");
+  });
+
   test("skipPhases skips multiple phases in one call", () => {
     tracker.skipPhases(["brainstorm", "plan"]);
     const s = tracker.getState();

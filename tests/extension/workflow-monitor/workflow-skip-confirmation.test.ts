@@ -437,3 +437,140 @@ describe("skip-confirmation gating on /skill transitions", () => {
     expect(ctx.ui.select).not.toHaveBeenCalled();
   });
 });
+
+describe("multiline /skill input: gate applies to furthest target phase", () => {
+  test("input with earlier skill on first line and farther skill on later line gates to farther phase", async () => {
+    const state = createWorkflowState({ brainstorm: "complete" }, "brainstorm");
+    const { fake, onSessionSwitch, onInput } = setupWithState(state);
+
+    const ctx = {
+      hasUI: true,
+      sessionManager: {
+        getBranch: () => [
+          {
+            type: "custom",
+            customType: WORKFLOW_TRACKER_ENTRY_TYPE,
+            data: createWorkflowState({ brainstorm: "complete" }, "brainstorm"),
+          },
+        ],
+      },
+      ui: {
+        setWidget: () => {},
+        select: vi.fn().mockResolvedValue("skip_all"),
+        setEditorText: vi.fn(),
+        notify: () => {},
+      },
+    };
+
+    await onSessionSwitch({}, ctx);
+    await onInput(
+      {
+        source: "user",
+        input: "/skill:writing-plans\nsome text\n/skill:verification-before-completion",
+      },
+      ctx
+    );
+
+    // Gate should have fired because plan and execute are unresolved before verify
+    expect(ctx.ui.select).toHaveBeenCalled();
+
+    const latest = fake.appendedEntries.at(-1)?.data;
+    expect(latest.phases.plan).toBe("skipped");
+    expect(latest.phases.execute).toBe("skipped");
+    expect(latest.currentPhase).toBe("verify");
+  });
+
+  test("single-line earlier skill does not silently bypass gate for later phases", async () => {
+    const state = createWorkflowState({ brainstorm: "complete" }, "brainstorm");
+    const { fake, onSessionSwitch, onInput } = setupWithState(state);
+
+    const ctx = {
+      hasUI: true,
+      sessionManager: {
+        getBranch: () => [
+          {
+            type: "custom",
+            customType: WORKFLOW_TRACKER_ENTRY_TYPE,
+            data: createWorkflowState({ brainstorm: "complete" }, "brainstorm"),
+          },
+        ],
+      },
+      ui: {
+        setWidget: () => {},
+        select: vi.fn(),
+        setEditorText: vi.fn(),
+        notify: () => {},
+      },
+    };
+
+    await onSessionSwitch({}, ctx);
+    await onInput({ source: "user", input: "/skill:writing-plans" }, ctx);
+
+    expect(ctx.ui.select).not.toHaveBeenCalled();
+  });
+
+  test("multiline with unknown skills returns null target (no gate)", async () => {
+    const state = createWorkflowState({ brainstorm: "pending" }, null);
+    const { fake, onSessionSwitch, onInput } = setupWithState(state);
+
+    const ctx = {
+      hasUI: true,
+      sessionManager: {
+        getBranch: () => [
+          {
+            type: "custom",
+            customType: WORKFLOW_TRACKER_ENTRY_TYPE,
+            data: createWorkflowState({ brainstorm: "pending" }, null),
+          },
+        ],
+      },
+      ui: {
+        setWidget: () => {},
+        select: vi.fn(),
+        setEditorText: vi.fn(),
+        notify: () => {},
+      },
+    };
+
+    await onSessionSwitch({}, ctx);
+    await onInput({ source: "user", input: "/skill:unknown-thing\n/skill:also-unknown" }, ctx);
+
+    expect(ctx.ui.select).not.toHaveBeenCalled();
+  });
+
+  test("multiline input blocks when farther phase has unresolved predecessors", async () => {
+    const state = createWorkflowState({}, null);
+    const { fake, onSessionSwitch, onInput } = setupWithState(state);
+
+    const ctx = {
+      hasUI: true,
+      sessionManager: {
+        getBranch: () => [
+          {
+            type: "custom",
+            customType: WORKFLOW_TRACKER_ENTRY_TYPE,
+            data: createWorkflowState({}, null),
+          },
+        ],
+      },
+      ui: {
+        setWidget: () => {},
+        select: vi.fn().mockResolvedValue("cancel"),
+        setEditorText: vi.fn(),
+        notify: () => {},
+      },
+    };
+
+    await onSessionSwitch({}, ctx);
+    const result = await onInput(
+      {
+        source: "user",
+        input: "/skill:brainstorming\n/skill:executing-plans",
+      },
+      ctx
+    );
+
+    expect(ctx.ui.select).toHaveBeenCalled();
+    expect(result).toEqual({ blocked: true });
+  });
+});

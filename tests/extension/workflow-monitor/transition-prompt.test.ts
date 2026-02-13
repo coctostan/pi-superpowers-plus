@@ -84,33 +84,45 @@ describe("boundary prompting", () => {
     const fake = createFakePi();
     workflowMonitorExtension(fake.api as any);
 
-    const onInput = getSingleHandler(fake.handlers, "input");
+    const onSessionSwitch = getSingleHandler(fake.handlers, "session_switch");
     const onAgentEnd = getSingleHandler(fake.handlers, "agent_end");
 
     let agentEndSelectCalls = 0;
-    let inAgentEnd = false;
     const ctx = {
       hasUI: true,
-      sessionManager: { getBranch: () => [] },
+      sessionManager: {
+        getBranch: () => [
+          {
+            type: "custom",
+            customType: WORKFLOW_TRACKER_ENTRY_TYPE,
+            data: {
+              phases: {
+                brainstorm: "skipped",
+                plan: "complete",
+                execute: "active",
+                verify: "pending",
+                review: "pending",
+                finish: "pending",
+              },
+              currentPhase: "execute",
+              artifacts: { brainstorm: null, plan: null, execute: null, verify: null, review: null, finish: null },
+              prompted: { brainstorm: false, plan: false, execute: false, verify: false, review: false, finish: false },
+            },
+          },
+        ],
+      },
       ui: {
         setWidget: () => {},
-        select: async (_title: string, options: any[]) => {
-          if (inAgentEnd) {
-            agentEndSelectCalls += 1;
-            return "discuss";
-          }
-          const hasSkipAll = options?.some?.((o: any) => o.value === "skip_all");
-          return hasSkipAll ? "skip_all" : "skip";
+        select: async () => {
+          agentEndSelectCalls += 1;
+          return "discuss";
         },
         setEditorText: () => {},
         notify: () => {},
       },
     };
 
-    await onInput({ source: "user", input: "/skill:writing-plans" }, ctx);
-    await onInput({ source: "user", input: "/skill:executing-plans" }, ctx);
-
-    inAgentEnd = true;
+    await onSessionSwitch({}, ctx);
     await onAgentEnd({}, ctx);
     await onAgentEnd({}, ctx);
 
@@ -121,13 +133,33 @@ describe("boundary prompting", () => {
     const fake = createFakePi();
     workflowMonitorExtension(fake.api as any);
 
-    const onInput = getSingleHandler(fake.handlers, "input");
+    const onSessionSwitch = getSingleHandler(fake.handlers, "session_switch");
     const onAgentEnd = getSingleHandler(fake.handlers, "agent_end");
 
     const editorTexts: string[] = [];
     const ctx = {
       hasUI: true,
-      sessionManager: { getBranch: () => [] },
+      sessionManager: {
+        getBranch: () => [
+          {
+            type: "custom",
+            customType: WORKFLOW_TRACKER_ENTRY_TYPE,
+            data: {
+              phases: {
+                brainstorm: "complete",
+                plan: "pending",
+                execute: "active",
+                verify: "pending",
+                review: "pending",
+                finish: "pending",
+              },
+              currentPhase: "execute",
+              artifacts: { brainstorm: null, plan: null, execute: null, verify: null, review: null, finish: null },
+              prompted: { brainstorm: false, plan: false, execute: false, verify: false, review: false, finish: false },
+            },
+          },
+        ],
+      },
       ui: {
         setWidget: () => {},
         select: async () => "skip",
@@ -136,11 +168,7 @@ describe("boundary prompting", () => {
       },
     };
 
-    await onInput({ source: "user", input: "/skill:brainstorming" }, ctx);
-
-    // Complete brainstorm naturally by moving to execute, leaving plan as a pending boundary.
-    await onInput({ source: "user", input: "/skill:executing-plans" }, ctx);
-
+    await onSessionSwitch({}, ctx);
     await onAgentEnd({}, ctx);
 
     const latest = fake.appendedEntries.at(-1)?.data;

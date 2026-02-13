@@ -110,7 +110,8 @@ export class WorkflowTracker {
   }
 
   skipPhase(phase: Phase): boolean {
-    if (this.state.phases[phase] !== "pending") return false;
+    const status = this.state.phases[phase];
+    if (status !== "pending" && status !== "active") return false;
     this.state.phases[phase] = "skipped";
     return true;
   }
@@ -143,6 +144,7 @@ export class WorkflowTracker {
 
   onInputText(text: string): boolean {
     const lines = text.split(/\r?\n/);
+    let changed = false;
 
     for (const line of lines) {
       const match = line.match(/^\s*\/skill:([^\s]+)/);
@@ -159,10 +161,10 @@ export class WorkflowTracker {
       else if (skill === "requesting-code-review") phase = "review";
       else if (skill === "finishing-a-development-branch") phase = "finish";
 
-      if (phase && this.advanceTo(phase)) return true;
+      if (phase && this.advanceTo(phase)) changed = true;
     }
 
-    return false;
+    return changed;
   }
 
   onFileWritten(path: string): boolean {
