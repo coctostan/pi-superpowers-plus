@@ -275,13 +275,19 @@ export default function (pi: ExtensionAPI) {
       handler.skipWorkflowPhases([prompt.nextPhase]);
 
       const nextIdx = WORKFLOW_PHASES.indexOf(prompt.nextPhase);
-      const phaseAfterSkip = WORKFLOW_PHASES[nextIdx + 1] ?? prompt.nextPhase;
-      handler.advanceWorkflowTo(phaseAfterSkip);
+      const phaseAfterSkip = WORKFLOW_PHASES[nextIdx + 1] ?? null;
+
+      if (phaseAfterSkip) {
+        handler.advanceWorkflowTo(phaseAfterSkip);
+      }
 
       persistWorkflowState();
       updateWidget(ctx);
-      const skipSkill = phaseToSkill[phaseAfterSkip] ?? "writing-plans";
-      ctx.ui.setEditorText(`/skill:${skipSkill}`);
+
+      if (phaseAfterSkip) {
+        const skipSkill = phaseToSkill[phaseAfterSkip] ?? "writing-plans";
+        ctx.ui.setEditorText(`/skill:${skipSkill}`);
+      }
     }
   });
 

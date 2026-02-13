@@ -136,6 +136,68 @@ describe("boundary prompting", () => {
     expect(editorTexts.at(-1)).toBe("/skill:executing-plans");
   });
 
+  test("skip on terminal next phase marks it skipped without advancing into it", async () => {
+    const fake = createFakePi();
+    workflowMonitorExtension(fake.api as any);
+
+    const onSessionSwitch = getSingleHandler(fake.handlers, "session_switch");
+    const onAgentEnd = getSingleHandler(fake.handlers, "agent_end");
+
+    const editorTexts: string[] = [];
+    const ctx = {
+      hasUI: true,
+      sessionManager: {
+        getBranch: () => [
+          {
+            type: "custom",
+            customType: WORKFLOW_TRACKER_ENTRY_TYPE,
+            data: {
+              phases: {
+                brainstorm: "complete",
+                plan: "complete",
+                execute: "complete",
+                verify: "complete",
+                review: "complete",
+                finish: "pending",
+              },
+              currentPhase: "review",
+              artifacts: {
+                brainstorm: null,
+                plan: null,
+                execute: null,
+                verify: null,
+                review: null,
+                finish: null,
+              },
+              prompted: {
+                brainstorm: true,
+                plan: true,
+                execute: true,
+                verify: true,
+                review: false,
+                finish: false,
+              },
+            },
+          },
+        ],
+      },
+      ui: {
+        setWidget: () => {},
+        select: async () => "skip",
+        setEditorText: (text: string) => editorTexts.push(text),
+        notify: () => {},
+      },
+    };
+
+    await onSessionSwitch({}, ctx);
+    await onAgentEnd({}, ctx);
+
+    const latest = fake.appendedEntries.at(-1)?.data;
+    expect(latest.phases.finish).toBe("skipped");
+    expect(latest.currentPhase).toBe("review");
+    expect(editorTexts).toHaveLength(0);
+  });
+
   test("verification boundary is prompted only after passing verification signal", async () => {
     const fake = createFakePi();
     workflowMonitorExtension(fake.api as any);
