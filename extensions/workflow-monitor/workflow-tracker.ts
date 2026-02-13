@@ -149,14 +149,17 @@ export class WorkflowTracker {
       if (!match) continue;
 
       const skill = match[1];
-      if (skill === "brainstorming") return this.advanceTo("brainstorm");
-      if (skill === "writing-plans") return this.advanceTo("plan");
-      if (skill === "executing-plans" || skill === "subagent-driven-development") {
-        return this.advanceTo("execute");
-      }
-      if (skill === "verification-before-completion") return this.advanceTo("verify");
-      if (skill === "requesting-code-review") return this.advanceTo("review");
-      if (skill === "finishing-a-development-branch") return this.advanceTo("finish");
+      let phase: Phase | null = null;
+
+      if (skill === "brainstorming") phase = "brainstorm";
+      else if (skill === "writing-plans") phase = "plan";
+      else if (skill === "executing-plans" || skill === "subagent-driven-development") {
+        phase = "execute";
+      } else if (skill === "verification-before-completion") phase = "verify";
+      else if (skill === "requesting-code-review") phase = "review";
+      else if (skill === "finishing-a-development-branch") phase = "finish";
+
+      if (phase && this.advanceTo(phase)) return true;
     }
 
     return false;

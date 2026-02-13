@@ -90,6 +90,27 @@ describe("WorkflowTracker detection helpers", () => {
     expect(tracker.getState().currentPhase).toBe("verify");
   });
 
+  test("continues scanning when first recognized /skill line is a no-op and later line advances", () => {
+    const tracker = new WorkflowTracker();
+    tracker.advanceTo("plan");
+
+    const changed = tracker.onInputText(
+      "/skill:brainstorming\n/skill:verification-before-completion run checks"
+    );
+
+    expect(changed).toBe(true);
+    expect(tracker.getState().currentPhase).toBe("verify");
+  });
+
+  test("ignores unknown /skill line and advances on later valid /skill line", () => {
+    const tracker = new WorkflowTracker();
+
+    const changed = tracker.onInputText("/skill:not-a-real-skill\n/skill:writing-plans");
+
+    expect(changed).toBe(true);
+    expect(tracker.getState().currentPhase).toBe("plan");
+  });
+
   test("does not detect /skill token when not at line start", () => {
     const tracker = new WorkflowTracker();
     const changed = tracker.onInputText("please run /skill:writing-plans draft initial breakdown");
