@@ -28,6 +28,7 @@ export interface WorkflowHandler {
   getWidgetText(): string;
   getTddState(): ReturnType<TddMonitor["getState"]>;
   checkCommitGate(command: string): VerificationViolation | null;
+  recordVerificationWaiver(): void;
   restoreTddState(
     phase: TddPhase,
     testFiles: string[],
@@ -160,6 +161,10 @@ export function createWorkflowHandler(): WorkflowHandler {
 
     checkCommitGate(command: string) {
       return verification.checkCommitGate(command);
+    },
+
+    recordVerificationWaiver() {
+      verification.recordVerificationWaiver();
     },
 
     restoreTddState(

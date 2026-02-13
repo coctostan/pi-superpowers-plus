@@ -39,6 +39,46 @@ describe("VerificationMonitor", () => {
     });
   });
 
+  describe("verification waiver", () => {
+    it("waiver allows commit gate to pass", () => {
+      monitor.recordVerificationWaiver();
+      const result = monitor.checkCommitGate("git commit -m 'feat: stuff'");
+      expect(result).toBeNull();
+    });
+
+    it("waiver allows push gate to pass", () => {
+      monitor.recordVerificationWaiver();
+      const result = monitor.checkCommitGate("git push origin main");
+      expect(result).toBeNull();
+    });
+
+    it("waiver allows pr gate to pass", () => {
+      monitor.recordVerificationWaiver();
+      const result = monitor.checkCommitGate("gh pr create --title 'feat'");
+      expect(result).toBeNull();
+    });
+
+    it("source write resets waiver", () => {
+      monitor.recordVerificationWaiver();
+      monitor.onSourceWritten();
+      expect(monitor.hasRecentVerification()).toBe(false);
+      const result = monitor.checkCommitGate("git commit -m 'fix'");
+      expect(result).not.toBeNull();
+    });
+
+    it("reset clears waiver", () => {
+      monitor.recordVerificationWaiver();
+      monitor.reset();
+      const result = monitor.checkCommitGate("git commit -m 'fix'");
+      expect(result).not.toBeNull();
+    });
+
+    it("waiver does not affect hasRecentVerification", () => {
+      monitor.recordVerificationWaiver();
+      expect(monitor.hasRecentVerification()).toBe(false);
+    });
+  });
+
   describe("checkCommitGate", () => {
     it("returns violation when committing without verification", () => {
       const result = monitor.checkCommitGate("git commit -m 'feat: stuff'");

@@ -32,7 +32,7 @@ import {
 } from "./workflow-monitor/workflow-tracker";
 import { getTransitionPrompt } from "./workflow-monitor/workflow-transitions";
 import { getCurrentGitRef } from "./workflow-monitor/git";
-import { getUnresolvedPhasesBefore } from "./workflow-monitor/skip-confirmation";
+import { getUnresolvedPhasesBefore, getUnresolvedPhases } from "./workflow-monitor/skip-confirmation";
 
 export default function (pi: ExtensionAPI) {
   const handler = createWorkflowHandler();
@@ -224,12 +224,141 @@ export default function (pi: ExtensionAPI) {
     updateWidget(ctx);
   });
 
+  // --- Completion action gate prompt ---
+  async function promptCompletionGate(
+    unresolved: Phase[],
+    ctx: any
+  ): Promise<"allowed" | "blocked"> {
+    if (unresolved.length === 1) {
+      const missing = unresolved[0];
+      const missingSkill = phaseToSkill[missing] ?? missing;
+      const options = [
+        { label: `Do ${missing} now`, value: "do_now" },
+        { label: `Skip ${missing}`, value: "skip" },
+        { label: "Cancel", value: "cancel" },
+      ];
+      const result = await ctx.ui.select(
+        `Phase "${missing}" is unresolved. What would you like to do?`,
+        options as any
+      );
+      const choice = typeof result === "string" ? result : (result as any)?.value ?? "cancel";
+
+      if (choice === "skip") {
+        handler.skipWorkflowPhases([missing]);
+        persistWorkflowState();
+        updateWidget(ctx);
+        return "allowed";
+      } else if (choice === "do_now") {
+        ctx.ui.setEditorText(`/skill:${missingSkill}`);
+        return "blocked";
+      } else {
+        return "blocked";
+      }
+    }
+
+    // Multiple unresolved
+    const summaryOptions = [
+      { label: "Review one-by-one", value: "review_individually" },
+      { label: "Skip all and continue", value: "skip_all" },
+      { label: "Cancel", value: "cancel" },
+    ];
+    const summaryResult = await ctx.ui.select(
+      `${unresolved.length} phases are unresolved: ${unresolved.join(", ")}. What would you like to do?`,
+      summaryOptions as any
+    );
+    const summaryChoice =
+      typeof summaryResult === "string"
+        ? summaryResult
+        : (summaryResult as any)?.value ?? "cancel";
+
+    if (summaryChoice === "skip_all") {
+      handler.skipWorkflowPhases(unresolved);
+      persistWorkflowState();
+      updateWidget(ctx);
+      return "allowed";
+    } else if (summaryChoice === "cancel") {
+      return "blocked";
+    }
+
+    // review_individually
+    for (const phase of unresolved) {
+      const skill = phaseToSkill[phase] ?? phase;
+      const options = [
+        { label: `Do ${phase} now`, value: "do_now" },
+        { label: `Skip ${phase}`, value: "skip" },
+        { label: "Cancel", value: "cancel" },
+      ];
+      const result = await ctx.ui.select(
+        `Phase "${phase}" is unresolved. What would you like to do?`,
+        options as any
+      );
+      const choice = typeof result === "string" ? result : (result as any)?.value ?? "cancel";
+
+      if (choice === "skip") {
+        handler.skipWorkflowPhases([phase]);
+        persistWorkflowState();
+        updateWidget(ctx);
+      } else if (choice === "do_now") {
+        ctx.ui.setEditorText(`/skill:${skill}`);
+        return "blocked";
+      } else {
+        return "blocked";
+      }
+    }
+
+    return "allowed";
+  }
+
+  // --- Completion action detection helpers ---
+  const COMMIT_RE = /\bgit\s+commit\b/;
+  const PUSH_RE = /\bgit\s+push\b/;
+  const PR_RE = /\bgh\s+pr\s+create\b/;
+
+  function getCompletionActionTarget(command: string): Phase | null {
+    if (COMMIT_RE.test(command)) return "verify";
+    if (PUSH_RE.test(command)) return "review";
+    if (PR_RE.test(command)) return "review";
+    return null;
+  }
+
+  function getUnresolvedPhasesForAction(target: Phase, state: WorkflowTrackerState): Phase[] {
+    if (target === "verify") {
+      // For commit: check verify itself
+      return getUnresolvedPhases(["verify"], state);
+    }
+    // For push/pr: check verify + review
+    return getUnresolvedPhases(["verify", "review"], state);
+  }
+
   // --- Tool call observation (detect file writes + verification gate) ---
   pi.on("tool_call", async (event, ctx) => {
     const toolCallId = event.toolCallId;
 
     if (event.toolName === "bash") {
       const command = ((event.input as Record<string, any>).command as string | undefined) ?? "";
+
+      // Completion action gating (interactive only)
+      if (ctx.hasUI) {
+        const actionTarget = getCompletionActionTarget(command);
+        if (actionTarget) {
+          const currentState = handler.getWorkflowState();
+          if (currentState) {
+            const unresolved = getUnresolvedPhasesForAction(actionTarget, currentState);
+            if (unresolved.length > 0) {
+              const gateResult = await promptCompletionGate(unresolved, ctx);
+              if (gateResult === "blocked") {
+                return { blocked: true };
+              }
+              // If allowed (skipped), record waiver if verify was among skipped
+              // so verification warning isn't re-flagged
+              if (unresolved.includes("verify")) {
+                handler.recordVerificationWaiver();
+              }
+            }
+          }
+        }
+      }
+
       const verificationViolation = handler.checkCommitGate(command);
       if (verificationViolation) {
         pendingVerificationViolations.set(toolCallId, verificationViolation);
