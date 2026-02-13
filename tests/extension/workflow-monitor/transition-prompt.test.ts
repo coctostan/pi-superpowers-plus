@@ -52,15 +52,21 @@ describe("boundary prompting", () => {
     const onInput = getSingleHandler(fake.handlers, "input");
     const onAgentEnd = getSingleHandler(fake.handlers, "agent_end");
 
-    let selectCalls = 0;
+    let agentEndSelectCalls = 0;
+    let inAgentEnd = false;
     const ctx = {
       hasUI: true,
       sessionManager: { getBranch: () => [] },
       ui: {
         setWidget: () => {},
-        select: async () => {
-          selectCalls += 1;
-          return "discuss";
+        select: async (_title: string, options: any[]) => {
+          if (inAgentEnd) {
+            agentEndSelectCalls += 1;
+            return "discuss";
+          }
+          // Gate prompt: skip single or skip_all for multi
+          const hasSkipAll = options?.some?.((o: any) => o.value === "skip_all");
+          return hasSkipAll ? "skip_all" : "skip";
         },
         setEditorText: () => {},
         notify: () => {},
@@ -68,9 +74,10 @@ describe("boundary prompting", () => {
     };
 
     await onInput({ source: "user", input: "/skill:writing-plans" }, ctx);
+    inAgentEnd = true;
     await onAgentEnd({}, ctx);
 
-    expect(selectCalls).toBe(0);
+    expect(agentEndSelectCalls).toBe(0);
   });
 
   test("prompts once for completed boundary and does not re-prompt", async () => {
@@ -80,15 +87,20 @@ describe("boundary prompting", () => {
     const onInput = getSingleHandler(fake.handlers, "input");
     const onAgentEnd = getSingleHandler(fake.handlers, "agent_end");
 
-    let selectCalls = 0;
+    let agentEndSelectCalls = 0;
+    let inAgentEnd = false;
     const ctx = {
       hasUI: true,
       sessionManager: { getBranch: () => [] },
       ui: {
         setWidget: () => {},
-        select: async () => {
-          selectCalls += 1;
-          return "discuss";
+        select: async (_title: string, options: any[]) => {
+          if (inAgentEnd) {
+            agentEndSelectCalls += 1;
+            return "discuss";
+          }
+          const hasSkipAll = options?.some?.((o: any) => o.value === "skip_all");
+          return hasSkipAll ? "skip_all" : "skip";
         },
         setEditorText: () => {},
         notify: () => {},
@@ -98,10 +110,11 @@ describe("boundary prompting", () => {
     await onInput({ source: "user", input: "/skill:writing-plans" }, ctx);
     await onInput({ source: "user", input: "/skill:executing-plans" }, ctx);
 
+    inAgentEnd = true;
     await onAgentEnd({}, ctx);
     await onAgentEnd({}, ctx);
 
-    expect(selectCalls).toBe(1);
+    expect(agentEndSelectCalls).toBe(1);
   });
 
   test("skip marks next phase skipped and advances beyond it", async () => {
@@ -206,15 +219,21 @@ describe("boundary prompting", () => {
     const onAgentEnd = getSingleHandler(fake.handlers, "agent_end");
     const onToolResult = getSingleHandler(fake.handlers, "tool_result");
 
-    let selectCalls = 0;
+    let agentEndSelectCalls = 0;
+    // Track whether we're in agent_end context to distinguish gate prompts from boundary prompts
+    let inAgentEnd = false;
     const ctx = {
       hasUI: true,
       sessionManager: { getBranch: () => [] },
       ui: {
         setWidget: () => {},
-        select: async () => {
-          selectCalls += 1;
-          return "discuss";
+        select: async (_title: string, options: any[]) => {
+          if (inAgentEnd) {
+            agentEndSelectCalls += 1;
+            return "discuss";
+          }
+          const hasSkipAll = options?.some?.((o: any) => o.value === "skip_all");
+          return hasSkipAll ? "skip_all" : "skip";
         },
         setEditorText: () => {},
         notify: () => {},
@@ -223,8 +242,10 @@ describe("boundary prompting", () => {
 
     await onInput({ source: "user", input: "/skill:verification-before-completion" }, ctx);
 
+    inAgentEnd = true;
     await onAgentEnd({}, ctx);
-    expect(selectCalls).toBe(0);
+    inAgentEnd = false;
+    expect(agentEndSelectCalls).toBe(0);
 
     await onToolResult(
       {
@@ -236,8 +257,9 @@ describe("boundary prompting", () => {
       ctx
     );
 
+    inAgentEnd = true;
     await onAgentEnd({}, ctx);
-    expect(selectCalls).toBe(1);
+    expect(agentEndSelectCalls).toBe(1);
   });
 
   test("finish transition pre-fills docs + learnings reminder", async () => {

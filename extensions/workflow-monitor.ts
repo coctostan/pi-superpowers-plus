@@ -26,11 +26,13 @@ import {
   WORKFLOW_PHASES,
   WORKFLOW_TRACKER_ENTRY_TYPE,
   computeBoundaryToPrompt,
+  type Phase,
   type TransitionBoundary,
   type WorkflowTrackerState,
 } from "./workflow-monitor/workflow-tracker";
 import { getTransitionPrompt } from "./workflow-monitor/workflow-transitions";
 import { getCurrentGitRef } from "./workflow-monitor/git";
+import { getUnresolvedPhasesBefore } from "./workflow-monitor/skip-confirmation";
 
 export default function (pi: ExtensionAPI) {
   const handler = createWorkflowHandler();
@@ -55,6 +57,22 @@ export default function (pi: ExtensionAPI) {
     review: "requesting-code-review",
     finish: "finishing-a-development-branch",
   };
+
+  const skillToPhase: Record<string, Phase> = {
+    brainstorming: "brainstorm",
+    "writing-plans": "plan",
+    "executing-plans": "execute",
+    "subagent-driven-development": "execute",
+    "verification-before-completion": "verify",
+    "requesting-code-review": "review",
+    "finishing-a-development-branch": "finish",
+  };
+
+  function parseTargetPhase(text: string): Phase | null {
+    const match = text.match(/^\s*\/skill:([^\s]+)/);
+    if (!match) return null;
+    return skillToPhase[match[1]] ?? null;
+  }
 
   const boundaryToPhase: Record<TransitionBoundary, keyof typeof phaseToSkill> = {
     design_committed: "brainstorm",
@@ -83,14 +101,127 @@ export default function (pi: ExtensionAPI) {
     });
   }
 
-  // --- Input observation (skill detection) ---
+  // --- Input observation (skill detection + skip-confirmation gate) ---
   pi.on("input", async (event, ctx) => {
     if (event.source === "extension") return;
     const text = (event.input as string | undefined) ?? "";
-    if (handler.handleInputText(text)) {
+
+    const targetPhase = parseTargetPhase(text);
+
+    // If no UI or no target phase, just track and proceed
+    if (!ctx.hasUI || !targetPhase) {
+      if (handler.handleInputText(text)) {
+        persistWorkflowState();
+        updateWidget(ctx);
+      }
+      return;
+    }
+
+    const currentState = handler.getWorkflowState();
+    if (!currentState) {
+      if (handler.handleInputText(text)) {
+        persistWorkflowState();
+        updateWidget(ctx);
+      }
+      return;
+    }
+
+    const unresolved = getUnresolvedPhasesBefore(targetPhase, currentState);
+
+    if (unresolved.length === 0) {
+      if (handler.handleInputText(text)) {
+        persistWorkflowState();
+        updateWidget(ctx);
+      }
+      return;
+    }
+
+    // --- Single unresolved phase ---
+    if (unresolved.length === 1) {
+      const missing = unresolved[0];
+      const missingSkill = phaseToSkill[missing] ?? missing;
+      const options = [
+        { label: `Do ${missing} now`, value: "do_now" },
+        { label: `Skip ${missing}`, value: "skip" },
+        { label: "Cancel", value: "cancel" },
+      ];
+      const result = await ctx.ui.select(
+        `Phase "${missing}" is unresolved. What would you like to do?`,
+        options as any
+      );
+      const choice = typeof result === "string" ? result : (result as any)?.value ?? "cancel";
+
+      if (choice === "skip") {
+        handler.skipWorkflowPhases([missing]);
+        handler.handleInputText(text);
+        persistWorkflowState();
+        updateWidget(ctx);
+        return;
+      } else if (choice === "do_now") {
+        ctx.ui.setEditorText(`/skill:${missingSkill}`);
+        return { blocked: true };
+      } else {
+        // cancel
+        return { blocked: true };
+      }
+    }
+
+    // --- Multiple unresolved phases ---
+    const summaryOptions = [
+      { label: "Review one-by-one", value: "review_individually" },
+      { label: "Skip all and continue", value: "skip_all" },
+      { label: "Cancel", value: "cancel" },
+    ];
+    const summaryResult = await ctx.ui.select(
+      `${unresolved.length} phases are unresolved: ${unresolved.join(", ")}. What would you like to do?`,
+      summaryOptions as any
+    );
+    const summaryChoice =
+      typeof summaryResult === "string"
+        ? summaryResult
+        : (summaryResult as any)?.value ?? "cancel";
+
+    if (summaryChoice === "skip_all") {
+      handler.skipWorkflowPhases(unresolved);
+      handler.handleInputText(text);
       persistWorkflowState();
       updateWidget(ctx);
+      return;
+    } else if (summaryChoice === "cancel") {
+      return { blocked: true };
     }
+
+    // review_individually: prompt for each
+    for (const phase of unresolved) {
+      const skill = phaseToSkill[phase] ?? phase;
+      const options = [
+        { label: `Do ${phase} now`, value: "do_now" },
+        { label: `Skip ${phase}`, value: "skip" },
+        { label: "Cancel", value: "cancel" },
+      ];
+      const result = await ctx.ui.select(
+        `Phase "${phase}" is unresolved. What would you like to do?`,
+        options as any
+      );
+      const choice = typeof result === "string" ? result : (result as any)?.value ?? "cancel";
+
+      if (choice === "skip") {
+        handler.skipWorkflowPhases([phase]);
+        persistWorkflowState();
+        updateWidget(ctx);
+      } else if (choice === "do_now") {
+        ctx.ui.setEditorText(`/skill:${skill}`);
+        return { blocked: true };
+      } else {
+        // cancel
+        return { blocked: true };
+      }
+    }
+
+    // All individually reviewed (all skipped) - allow transition
+    handler.handleInputText(text);
+    persistWorkflowState();
+    updateWidget(ctx);
   });
 
   // --- Tool call observation (detect file writes + verification gate) ---
