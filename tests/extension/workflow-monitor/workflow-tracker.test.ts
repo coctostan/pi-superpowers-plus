@@ -76,6 +76,27 @@ describe("WorkflowTracker detection helpers", () => {
     expect(tracker.getState().currentPhase).toBe("brainstorm");
   });
 
+  test("detects /skill token with trailing text at start of a later line", () => {
+    const tracker = new WorkflowTracker();
+    const changed = tracker.onInputText("status update\n/skill:writing-plans draft initial breakdown");
+    expect(changed).toBe(true);
+    expect(tracker.getState().currentPhase).toBe("plan");
+  });
+
+  test("detects /skill token on later indented line in multi-line input", () => {
+    const tracker = new WorkflowTracker();
+    const changed = tracker.onInputText("first line\n  /skill:verification-before-completion run checks");
+    expect(changed).toBe(true);
+    expect(tracker.getState().currentPhase).toBe("verify");
+  });
+
+  test("does not detect /skill token when not at line start", () => {
+    const tracker = new WorkflowTracker();
+    const changed = tracker.onInputText("please run /skill:writing-plans draft initial breakdown");
+    expect(changed).toBe(false);
+    expect(tracker.getState().currentPhase).toBeNull();
+  });
+
   test("detects writing a design doc artifact and advances to brainstorm", () => {
     const tracker = new WorkflowTracker();
     tracker.onFileWritten("docs/plans/2026-02-10-foo-design.md");

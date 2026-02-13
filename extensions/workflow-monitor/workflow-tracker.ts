@@ -142,18 +142,22 @@ export class WorkflowTracker {
   }
 
   onInputText(text: string): boolean {
-    const trimmed = text.trim();
-    if (!trimmed.startsWith("/skill:")) return false;
+    const lines = text.split(/\r?\n/);
 
-    const skill = trimmed.slice("/skill:".length).split(/\s+/)[0];
-    if (skill === "brainstorming") return this.advanceTo("brainstorm");
-    if (skill === "writing-plans") return this.advanceTo("plan");
-    if (skill === "executing-plans" || skill === "subagent-driven-development") {
-      return this.advanceTo("execute");
+    for (const line of lines) {
+      const match = line.match(/^\s*\/skill:([^\s]+)/);
+      if (!match) continue;
+
+      const skill = match[1];
+      if (skill === "brainstorming") return this.advanceTo("brainstorm");
+      if (skill === "writing-plans") return this.advanceTo("plan");
+      if (skill === "executing-plans" || skill === "subagent-driven-development") {
+        return this.advanceTo("execute");
+      }
+      if (skill === "verification-before-completion") return this.advanceTo("verify");
+      if (skill === "requesting-code-review") return this.advanceTo("review");
+      if (skill === "finishing-a-development-branch") return this.advanceTo("finish");
     }
-    if (skill === "verification-before-completion") return this.advanceTo("verify");
-    if (skill === "requesting-code-review") return this.advanceTo("review");
-    if (skill === "finishing-a-development-branch") return this.advanceTo("finish");
 
     return false;
   }
