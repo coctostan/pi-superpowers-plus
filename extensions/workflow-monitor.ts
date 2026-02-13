@@ -271,9 +271,13 @@ export default function (pi: ExtensionAPI) {
         prompt.nextPhase === "finish" ? finishReminder + fresh : fresh
       );
     } else if (selected === "skip") {
+      // Explicit user-confirmed skip: mark the next phase as skipped, then move on.
+      handler.skipWorkflowPhases([prompt.nextPhase]);
+
       const nextIdx = WORKFLOW_PHASES.indexOf(prompt.nextPhase);
       const phaseAfterSkip = WORKFLOW_PHASES[nextIdx + 1] ?? prompt.nextPhase;
       handler.advanceWorkflowTo(phaseAfterSkip);
+
       persistWorkflowState();
       updateWidget(ctx);
       const skipSkill = phaseToSkill[phaseAfterSkip] ?? "writing-plans";
