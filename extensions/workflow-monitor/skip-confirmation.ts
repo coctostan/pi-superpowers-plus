@@ -11,8 +11,11 @@ export function isPhaseUnresolved(status: PhaseStatus): boolean {
 
 export function getUnresolvedPhasesBefore(target: Phase, state: WorkflowTrackerState): Phase[] {
   const targetIndex = WORKFLOW_PHASES.indexOf(target);
-  const phasesBefore = WORKFLOW_PHASES.slice(0, targetIndex);
+  if (targetIndex === -1) {
+    return [];
+  }
 
+  const phasesBefore = WORKFLOW_PHASES.slice(0, targetIndex);
   return getUnresolvedPhases(phasesBefore, state);
 }
 

@@ -52,6 +52,56 @@ describe("skip-confirmation helpers", () => {
     expect(getUnresolvedPhasesBefore("verify", state)).toEqual(["plan", "execute"]);
   });
 
+  test("returns empty list for brainstorm boundary target", () => {
+    const state = createState({ brainstorm: "pending" });
+
+    expect(getUnresolvedPhasesBefore("brainstorm", state)).toEqual([]);
+  });
+
+  test("returns only unresolved phases before finish", () => {
+    const state = createState({
+      brainstorm: "pending",
+      plan: "complete",
+      review: "active",
+      finish: "pending",
+    });
+
+    expect(getUnresolvedPhasesBefore("finish", state)).toEqual(["brainstorm", "review"]);
+  });
+
+  test("returns empty list when no prior phases are unresolved", () => {
+    const state = createState({
+      brainstorm: "complete",
+      plan: "skipped",
+      execute: "complete",
+      review: "complete",
+      finish: "pending",
+    });
+
+    expect(getUnresolvedPhasesBefore("finish", state)).toEqual([]);
+  });
+
+  test("excludes unresolved target phase itself", () => {
+    const state = createState({
+      brainstorm: "active",
+      plan: "pending",
+      execute: "pending",
+    });
+
+    expect(getUnresolvedPhasesBefore("execute", state)).toEqual(["brainstorm", "plan"]);
+  });
+
+  test("returns empty list for runtime-invalid target value", () => {
+    const state = createState({
+      brainstorm: "pending",
+      plan: "active",
+      review: "pending",
+    });
+
+    expect(() => getUnresolvedPhasesBefore("invalid-phase" as Phase, state)).not.toThrow();
+    expect(getUnresolvedPhasesBefore("invalid-phase" as Phase, state)).toEqual([]);
+  });
+
   test("excludes skipped phases from unresolved lists", () => {
     const state = createState({
       brainstorm: "skipped",
