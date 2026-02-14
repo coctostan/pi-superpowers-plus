@@ -51,6 +51,14 @@ Or add to `.pi/settings.json` (project-level) or `~/.pi/agent/config.json` (glob
 
 No configuration required. Skills and extensions activate automatically.
 
+## Support
+
+- Questions / support: https://github.com/coctostan/pi-superpowers-plus/discussions
+- Bugs: https://github.com/coctostan/pi-superpowers-plus/issues/new/choose
+- Feature requests: https://github.com/coctostan/pi-superpowers-plus/issues/new/choose
+- Roadmap: [`ROADMAP.md`](ROADMAP.md)
+- Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+
 ## Upgrading from `pi-superpowers`
 
 If you're currently using [`pi-superpowers`](https://github.com/coctostan/pi-superpowers), `pi-superpowers-plus` is intended as a drop-in upgrade: you keep the same skill names and workflow, but you also get **active, runtime enforcement** via extensions.
