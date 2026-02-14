@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions / Support (GitHub Discussions)
+    url: https://github.com/coctostan/pi-superpowers-plus/discussions
+    about: Please use Discussions for questions and support. Use Issues only for bugs and feature requests.

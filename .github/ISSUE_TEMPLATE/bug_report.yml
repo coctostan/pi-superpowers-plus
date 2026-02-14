@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a reproducible problem (expected vs actual)
+title: "bug: <short summary>"
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report!
+
+        **Questions/support:** please use GitHub Discussions instead:
+        https://github.com/coctostan/pi-superpowers-plus/discussions
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the problem.
+      placeholder: "When I run ..., it ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Please include exact commands and minimal repro steps.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected vs actual
+      description: What did you expect to happen, and what actually happened?
+      placeholder: |
+        Expected:
+        Actual:
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Please fill in versions.
+      value: |
+        OS:
+        Node:
+        pi:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output (optional)
+      description: Paste relevant output here. Please redact secrets.
+      render: shell
+    validations:
+      required: false

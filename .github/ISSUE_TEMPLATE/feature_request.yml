@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest an improvement or new capability
+title: "feat: <short summary>"
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion!
+
+        **Questions/support:** please use GitHub Discussions instead:
+        https://github.com/coctostan/pi-superpowers-plus/discussions
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / user story
+      description: What problem are you trying to solve?
+      placeholder: "As a ..., I want ..., so that ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What would you like to see changed or added?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered (optional)
+      description: Any other approaches you considered.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: willingness
+    attributes:
+      label: Implementation
+      options:
+        - label: I’d be willing to open a PR for this
+          required: false
