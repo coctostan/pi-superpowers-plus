@@ -477,9 +477,11 @@ export default function (pi: ExtensionAPI) {
         if (normalizedForCheck.startsWith("./")) normalizedForCheck = normalizedForCheck.slice(2);
         const resolved = path.resolve(process.cwd(), normalizedForCheck);
         const plansRoot = path.join(process.cwd(), "docs", "plans") + path.sep;
+        const handoffsRoot = path.join(process.cwd(), ".claude", "handoffs") + path.sep;
         const isPlansWrite = resolved.startsWith(plansRoot);
+        const isHandoffWrite = resolved.startsWith(handoffsRoot);
 
-        if (isThinkingPhase && !isPlansWrite) {
+        if (isThinkingPhase && !isPlansWrite && !isHandoffWrite) {
           const escalation = await maybeEscalate("process", ctx);
           if (escalation === "block") {
             return { blocked: true };
@@ -488,7 +490,7 @@ export default function (pi: ExtensionAPI) {
           pendingProcessWarnings.set(
             toolCallId,
             `⚠️ PROCESS VIOLATION: Wrote ${filePath} during ${phase} phase.\n` +
-              "During brainstorming/planning you may only write to docs/plans/. Stop and return to docs/plans/ or advance workflow phases intentionally.",
+              "During brainstorming/planning you may only write to docs/plans/ or .claude/handoffs/. Stop and return to an allowed planning/handoff path or advance workflow phases intentionally.",
           );
         }
 
