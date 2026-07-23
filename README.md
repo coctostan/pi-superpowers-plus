@@ -31,21 +31,7 @@ More detail:
 ## Install
 
 ```bash
-pi install npm:pi-superpowers-plus
-```
-
-Or from git:
-
-```bash
-pi install git:github.com/coctostan/pi-superpowers-plus
-```
-
-Or add to `.pi/settings.json` (project-level) or `~/.pi/agent/config.json` (global):
-
-```json
-{
-  "packages": ["npm:pi-superpowers-plus"]
-}
+pi install git:github.com/johnstegeman/pi-superpowers-plus
 ```
 
 No configuration required. Skills and extensions activate automatically.
