@@ -123,7 +123,7 @@ describe("WorkflowHandler aggregated state persistence", () => {
         },
         currentPhase: "plan",
         artifacts: {
-          brainstorm: "docs/plans/2026-02-15-feature-design.md",
+          brainstorm: "docs/superpowers/specs/2026-02-15-feature-design.md",
           plan: null,
           execute: null,
           verify: null,
@@ -296,7 +296,7 @@ describe("file-based state persistence", () => {
         },
         currentPhase: "plan",
         artifacts: {
-          brainstorm: "docs/plans/file-design.md",
+          brainstorm: "docs/superpowers/specs/file-design.md",
           plan: null,
           execute: null,
           verify: null,
@@ -375,7 +375,7 @@ describe("file-based state persistence", () => {
         },
         currentPhase: "plan",
         artifacts: {
-          brainstorm: "docs/plans/session-design.md",
+          brainstorm: "docs/superpowers/specs/session-design.md",
           plan: null,
           execute: null,
           verify: null,
@@ -429,7 +429,7 @@ describe("workflow-monitor state reconstruction + persistence wiring", () => {
         },
         currentPhase: "plan",
         artifacts: {
-          brainstorm: "docs/plans/2026-02-15-feature-design.md",
+          brainstorm: "docs/superpowers/specs/2026-02-15-feature-design.md",
           plan: null,
           execute: null,
           verify: null,
@@ -552,7 +552,7 @@ describe("workflow-monitor state reconstruction + persistence wiring", () => {
         },
         currentPhase: "plan",
         artifacts: {
-          brainstorm: "docs/plans/new-design.md",
+          brainstorm: "docs/superpowers/specs/new-design.md",
           plan: null,
           execute: null,
           verify: null,

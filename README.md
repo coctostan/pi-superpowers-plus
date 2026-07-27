@@ -18,7 +18,7 @@ Your coding agent doesn't just know the rules - it follows them. Skills teach th
 **After installation**:
 - Any time the agent writes a source file without a failing test, it gets a warning injected into the tool result.
 - Any time it tries to `git commit` / `git push` / `gh pr create` without passing tests, it gets gated.
-- During **Brainstorm**/**Plan**, writes are restricted to `docs/plans/` (writes elsewhere trigger a process violation).
+- During **Brainstorm**/**Plan**, writes are restricted to `docs/superpowers/specs/` (brainstorm) and `docs/superpowers/plans/` (plan); writes elsewhere trigger a process violation.
 - On the first tool output of a session (inside a git repo), the agent is shown the **current git branch (or detached HEAD short SHA)**.
 - On the first write/edit of a session (inside a git repo), the agent is warned to **confirm it's on the correct branch/worktree** before continuing.
 
@@ -125,7 +125,7 @@ The **workflow tracker** shows progress in the TUI status bar as the agent moves
 -brainstorm → ✓plan → [execute] → verify → review → finish
 ```
 
-Phases are detected automatically from skill invocations, artifact writes under `docs/plans/`, and plan tracker initialization. At phase boundaries, the agent is prompted (once) with options to continue, start a fresh session, skip, or discuss.
+Phases are detected automatically from skill invocations, artifact writes under `docs/superpowers/specs/` and `docs/superpowers/plans/`, and plan tracker initialization. At phase boundaries, the agent is prompted (once) with options to continue, start a fresh session, skip, or discuss.
 
 ### Supporting Skills
 
@@ -181,7 +181,7 @@ Outside a git repo, it stays silent.
 
 Tracks which workflow phase the agent is in and shows a phase strip in the TUI widget. Detection signals:
 - Skill invocations (`/skill:brainstorming`, `/skill:writing-plans`, etc.)
-- Artifact writes under `docs/plans/` (`*-design.md` → brainstorm, `*-implementation.md` → plan)
+- Artifact writes under `docs/superpowers/specs/` (→ brainstorm) and `docs/superpowers/plans/` (→ plan)
 - `plan_tracker` init calls → execute phase
 - Passing test runs during verify phase → verify complete
 
@@ -195,8 +195,8 @@ When transitioning into **finish**, the monitor pre-fills the editor with a remi
 
 The `/workflow-next` command starts a new session with artifact context:
 ```
-/workflow-next plan docs/plans/2026-02-10-my-feature-design.md
-/workflow-next execute docs/plans/2026-02-11-my-feature-implementation.md
+/workflow-next plan docs/superpowers/specs/2026-02-10-my-feature-design.md
+/workflow-next execute docs/superpowers/plans/2026-02-11-my-feature-implementation.md
 /workflow-next verify
 ```
 
@@ -264,7 +264,7 @@ Agent definitions live in `agents/*.md` and use YAML frontmatter to declare tool
 ### Single Agent
 
 ```ts
-subagent({ agent: "implementer", task: "Implement the retry logic per docs/plans/retry-plan.md Task 3" })
+subagent({ agent: "implementer", task: "Implement the retry logic per docs/superpowers/plans/retry-plan.md Task 3" })
 ```
 
 ### Parallel Tasks

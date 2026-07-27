@@ -9,6 +9,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Specs/plans path convention** — Design/spec documents now live in `docs/superpowers/specs/` and implementation plans in `docs/superpowers/plans/` (previously both under `docs/plans/`). Skills (`brainstorming`, `writing-plans`), the workflow tracker, thinking-phase write enforcement, and user-facing docs all point at the new locations. Existing artifacts under `docs/plans/` are not moved.
+- **Strict per-phase write boundaries** — During **Brainstorm**, writes are restricted to `docs/superpowers/specs/` only; during **Plan**, to `docs/superpowers/plans/` only. Previously any file under `docs/plans/` was allowed during either thinking phase. Cross-directory writes during a thinking phase now trigger a process violation.
+- **Directory-based artifact detection** — The workflow tracker now detects phase artifacts by directory (`docs/superpowers/specs/` → brainstorm, `docs/superpowers/plans/` → plan) instead of by filename suffix.
+
+### Fixed
+
+- **Plan artifacts going undetected** — The previous `*-implementation.md` suffix rule did not match the `YYYY-MM-DD-<feature>.md` naming that `writing-plans` instructs agents to use, so most plan writes were never recorded as artifacts and the workflow phase did not advance. Directory-based detection resolves this.
+
 ### Removed
 
 - **`tdd-guard` extension** — TDD enforcement is now handled via runtime warnings in `workflow-monitor` and three-scenario TDD instructions embedded in agent profiles and skill text. Agent profiles no longer need `extensions: ../extensions/tdd-guard.ts` in their frontmatter.

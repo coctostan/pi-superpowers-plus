@@ -70,9 +70,11 @@ export const SKILL_TO_PHASE: Record<string, Phase> = {
   "finishing-a-development-branch": "finish",
 };
 
-const PLANS_DIR_RE = /^docs\/plans\//;
-const DESIGN_RE = /-design\.md$/;
-const IMPLEMENTATION_RE = /-implementation\.md$/;
+// Artifact detection is directory-based (not filename-suffix-based):
+//   docs/superpowers/specs/  → brainstorm phase (design/spec artifacts)
+//   docs/superpowers/plans/   → plan phase (implementation plans)
+const SPECS_DIR_RE = /^docs\/superpowers\/specs\//;
+const PLANS_DIR_RE = /^docs\/superpowers\/plans\//;
 
 export class WorkflowTracker {
   private state: WorkflowTrackerState = emptyState();
@@ -178,15 +180,13 @@ export class WorkflowTracker {
   }
 
   onFileWritten(path: string): boolean {
-    if (!PLANS_DIR_RE.test(path)) return false;
-
-    if (DESIGN_RE.test(path)) {
+    if (SPECS_DIR_RE.test(path)) {
       const changedArtifact = this.recordArtifact("brainstorm", path);
       const changedPhase = this.advanceTo("brainstorm");
       return changedArtifact || changedPhase;
     }
 
-    if (IMPLEMENTATION_RE.test(path)) {
+    if (PLANS_DIR_RE.test(path)) {
       const changedArtifact = this.recordArtifact("plan", path);
       const changedPhase = this.advanceTo("plan");
       return changedArtifact || changedPhase;

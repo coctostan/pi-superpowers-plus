@@ -26,10 +26,10 @@ describe("/workflow-next", () => {
       newSession: async () => ({ cancelled: false }),
     };
 
-    await handler("plan docs/plans/2026-02-10-x-design.md", ctx);
+    await handler("plan docs/superpowers/specs/2026-02-10-x-design.md", ctx);
 
     expect(calls[0][0]).toBe("setEditorText");
-    expect(calls[0][1]).toMatch(/Continue from artifact: docs\/plans\/2026-02-10-x-design\.md/);
+    expect(calls[0][1]).toMatch(/Continue from artifact: docs\/superpowers\/specs\/2026-02-10-x-design\.md/);
   });
 
   test("rejects invalid phase values", async () => {
@@ -61,7 +61,7 @@ describe("/workflow-next", () => {
       },
     };
 
-    await handler("nonsense docs/plans/foo.md", ctx);
+    await handler("nonsense docs/superpowers/plans/foo.md", ctx);
 
     expect(newSessionCalls).toBe(0);
     expect(notifications[0]?.[0]).toMatch(/Usage: \/workflow-next <phase>/);

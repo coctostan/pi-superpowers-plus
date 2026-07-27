@@ -16,7 +16,8 @@ Example:
 - Writing or editing non-plan files while in **Brainstorm** or **Plan** phase.
 
 In thinking phases, the only allowed writes are to:
-- `docs/plans/`
+- `docs/superpowers/specs/` (during brainstorm)
+- `docs/superpowers/plans/` (during plan)
 
 ### 2) Practice violations (quality practices)
 These are violations of *how you work*.

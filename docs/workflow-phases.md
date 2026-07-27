@@ -12,7 +12,7 @@ Brainstorm → Plan → Execute → Verify → Review → Finish
 
 ### Brainstorm (thinking phase)
 - Goal: turn a vague idea into a design.
-- Writes allowed: **only** `docs/plans/` (design docs / notes).
+- Writes allowed: **only** `docs/superpowers/specs/` (design docs / notes).
 - Writes not allowed: source code, tests, config, extensions, etc.
 
 Recommended skill:
@@ -20,7 +20,7 @@ Recommended skill:
 
 ### Plan (thinking phase)
 - Goal: produce an executable implementation plan.
-- Writes allowed: **only** `docs/plans/` (the plan document).
+- Writes allowed: **only** `docs/superpowers/plans/` (the plan document).
 - Writes not allowed: source code, tests, config, etc.
 
 Recommended skill:

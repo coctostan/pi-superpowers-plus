@@ -68,7 +68,7 @@ describe("WorkflowTracker", () => {
 
   test("advanceTo backward triggers full reset and activates the target phase", () => {
     tracker.advanceTo("plan");
-    tracker.recordArtifact("plan", "docs/plans/foo.md");
+    tracker.recordArtifact("plan", "docs/superpowers/plans/foo.md");
     tracker.markPrompted("plan");
 
     const result = tracker.advanceTo("brainstorm");
@@ -105,13 +105,13 @@ describe("WorkflowTracker", () => {
   });
 
   test("records artifacts per phase", () => {
-    tracker.recordArtifact("brainstorm", "docs/plans/2026-02-10-x-design.md");
-    expect(tracker.getState().artifacts.brainstorm).toBe("docs/plans/2026-02-10-x-design.md");
+    tracker.recordArtifact("brainstorm", "docs/superpowers/specs/2026-02-10-x-design.md");
+    expect(tracker.getState().artifacts.brainstorm).toBe("docs/superpowers/specs/2026-02-10-x-design.md");
   });
 
   test("reset() restores tracker to empty state regardless of prior state", () => {
     tracker.advanceTo("execute");
-    tracker.recordArtifact("plan", "docs/plans/2026-02-20-foo.md");
+    tracker.recordArtifact("plan", "docs/superpowers/plans/2026-02-20-foo.md");
     tracker.markPrompted("brainstorm");
 
     tracker.reset();
@@ -216,24 +216,24 @@ describe("WorkflowTracker detection helpers", () => {
     expect(tracker.onSkillFileRead("/home/pi/workspace/pi-superpowers-plus/skills/writing-plans/README.md")).toBe(
       false,
     );
-    expect(tracker.onSkillFileRead("docs/plans/2026-02-11-foo-implementation.md")).toBe(false);
+    expect(tracker.onSkillFileRead("docs/superpowers/plans/2026-02-11-foo.md")).toBe(false);
     expect(tracker.getState().currentPhase).toBeNull();
   });
 
   test("detects writing a design doc artifact and advances to brainstorm", () => {
     const tracker = new WorkflowTracker();
-    tracker.onFileWritten("docs/plans/2026-02-10-foo-design.md");
+    tracker.onFileWritten("docs/superpowers/specs/2026-02-10-foo-design.md");
     const s = tracker.getState();
     expect(s.currentPhase).toBe("brainstorm");
-    expect(s.artifacts.brainstorm).toBe("docs/plans/2026-02-10-foo-design.md");
+    expect(s.artifacts.brainstorm).toBe("docs/superpowers/specs/2026-02-10-foo-design.md");
   });
 
   test("detects writing an implementation plan artifact and advances to plan", () => {
     const tracker = new WorkflowTracker();
-    tracker.onFileWritten("docs/plans/2026-02-11-foo-implementation.md");
+    tracker.onFileWritten("docs/superpowers/plans/2026-02-11-foo.md");
     const s = tracker.getState();
     expect(s.currentPhase).toBe("plan");
-    expect(s.artifacts.plan).toBe("docs/plans/2026-02-11-foo-implementation.md");
+    expect(s.artifacts.plan).toBe("docs/superpowers/plans/2026-02-11-foo.md");
   });
 
   test("detects plan_tracker init and advances to execute", () => {

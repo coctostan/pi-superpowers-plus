@@ -476,19 +476,29 @@ export default function (pi: ExtensionAPI) {
         let normalizedForCheck = filePath;
         if (normalizedForCheck.startsWith("./")) normalizedForCheck = normalizedForCheck.slice(2);
         const resolved = path.resolve(process.cwd(), normalizedForCheck);
-        const plansRoot = path.join(process.cwd(), "docs", "plans") + path.sep;
-        const isPlansWrite = resolved.startsWith(plansRoot);
 
-        if (isThinkingPhase && !isPlansWrite) {
+        // Strict per-phase write boundaries for thinking phases:
+        //   brainstorm → only docs/superpowers/specs/  (design/spec artifacts)
+        //   plan       → only docs/superpowers/plans/  (implementation plans)
+        let allowedRoot: string | null = null;
+        if (phase === "brainstorm") {
+          allowedRoot = path.join(process.cwd(), "docs", "superpowers", "specs") + path.sep;
+        } else if (phase === "plan") {
+          allowedRoot = path.join(process.cwd(), "docs", "superpowers", "plans") + path.sep;
+        }
+        const isAllowedWrite = allowedRoot !== null && resolved.startsWith(allowedRoot);
+
+        if (isThinkingPhase && !isAllowedWrite) {
           const escalation = await maybeEscalate("process", ctx);
           if (escalation === "block") {
             return { blocked: true };
           }
 
+          const allowedDir = phase === "brainstorm" ? "docs/superpowers/specs/" : "docs/superpowers/plans/";
           pendingProcessWarnings.set(
             toolCallId,
             `⚠️ PROCESS VIOLATION: Wrote ${filePath} during ${phase} phase.\n` +
-              "During brainstorming/planning you may only write to docs/plans/. Stop and return to docs/plans/ or advance workflow phases intentionally.",
+              `During ${phase} you may only write to ${allowedDir}. Stop and return to ${allowedDir} or advance workflow phases intentionally.`,
           );
         }
 

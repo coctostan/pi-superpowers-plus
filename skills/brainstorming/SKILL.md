@@ -15,7 +15,7 @@ Start by understanding the current project context, then ask questions one at a 
 
 ## Boundaries
 - Read code and docs: yes
-- Write to docs/plans/: yes
+- Write to docs/superpowers/specs/: yes
 - Edit or create any other files: no
 
 ## The Process
@@ -50,7 +50,7 @@ Start by understanding the current project context, then ask questions one at a 
 ## After the Design
 
 **Documentation:**
-- Write the validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md`
+- Write the validated design to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
 - Commit the design document to git
 - Mark the brainstorm phase complete: call `plan_tracker` with `{action: "update", status: "complete"}` for the current phase
 

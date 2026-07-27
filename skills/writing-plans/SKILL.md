@@ -17,11 +17,11 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Context:** This should be run in a dedicated worktree (created by brainstorming skill).
 
-**Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md`
+**Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 
 ## Boundaries
 - Read code and docs: yes
-- Write to docs/plans/: yes
+- Write to docs/superpowers/plans/: yes
 - Edit or create any other files: no
 
 ## Bite-Sized Task Granularity
@@ -111,7 +111,7 @@ After saving the plan, mark the planning phase complete: call `plan_tracker` wit
 
 Then offer execution choice:
 
-**"Plan complete and saved to `docs/plans/<filename>.md`. Two execution options:**
+**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Two execution options:**
 
 **1. Subagent-Driven (this session)** - Fresh subagent per task with two-stage review. Better for plans with many independent tasks.
 
