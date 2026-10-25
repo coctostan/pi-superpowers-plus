@@ -26,12 +26,15 @@ export function parseTestCommand(command: string): boolean {
   return TEST_COMMANDS.some((p) => p.test(command));
 }
 
-export function parseTestResult(output: string, exitCode: number | undefined): boolean | null {
+export function parseTestResult(output: string, exitCode: number | undefined, isError?: boolean): boolean | null {
+  // The tool/process status takes precedence over optimistic test output.
+  if (isError === true || (exitCode !== undefined && exitCode !== 0)) return false;
+
   const hasFail = FAIL_PATTERNS.some((p) => p.test(output));
   const hasPass = PASS_PATTERNS.some((p) => p.test(output));
 
-  if (hasFail && !hasPass) return false;
-  if (hasPass && !hasFail) return true;
-  if (exitCode !== undefined) return exitCode === 0;
+  if (hasFail) return false;
+  if (hasPass && (exitCode === 0 || isError === false)) return true;
+  if (exitCode === 0) return true;
   return null;
 }
