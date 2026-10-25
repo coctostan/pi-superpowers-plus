@@ -573,11 +573,11 @@ export default function (pi: ExtensionAPI) {
         .join("\n");
       // biome-ignore lint/suspicious/noExplicitAny: pi SDK event details type
       const exitCode = (event.details as any)?.exitCode as number | undefined;
-      handler.handleBashResult(command, output, exitCode);
+      handler.handleBashResult(command, output, exitCode, event.isError);
       persistState();
 
       const isTestCommand = parseTestCommand(command);
-      const passed = isTestCommand ? parseTestResult(output, exitCode) : null;
+      const passed = isTestCommand ? parseTestResult(output, exitCode, event.isError) : null;
       if (passed === true) {
         const state = handler.getWorkflowState();
         if (state?.currentPhase === "verify" && state.phases.verify === "active") {

@@ -64,7 +64,7 @@ export const VERIFICATION_DEFAULTS = {
 export interface WorkflowHandler {
   handleToolCall(toolName: string, input: Record<string, unknown>): ToolCallResult;
   handleReadOrInvestigation(toolName: string, path: string): void;
-  handleBashResult(command: string, output: string, exitCode: number | undefined): void;
+  handleBashResult(command: string, output: string, exitCode: number | undefined, isError?: boolean): void;
   /** @internal Used in tests; will be wired to bash events in future */
   handleBashInvestigation(command: string): void;
   isDebugActive(): boolean;
@@ -131,7 +131,7 @@ export function createWorkflowHandler(): WorkflowHandler {
       }
     },
 
-    handleBashResult(command: string, output: string, exitCode: number | undefined): void {
+    handleBashResult(command: string, output: string, exitCode: number | undefined, isError?: boolean): void {
       if (isInvestigationCommand(command)) {
         debug.onInvestigation();
       }
@@ -144,7 +144,7 @@ export function createWorkflowHandler(): WorkflowHandler {
       }
 
       if (parseTestCommand(command)) {
-        const passed = parseTestResult(output, exitCode);
+        const passed = parseTestResult(output, exitCode, isError);
         if (passed !== null) {
           if (passed) {
             verification.recordVerification();

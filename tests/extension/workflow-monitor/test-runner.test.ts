@@ -61,6 +61,19 @@ describe("parseTestResult", () => {
     expect(parseTestResult("some unknown output", undefined)).toBeNull();
   });
 
+  test("never accepts successful-looking output when the process or tool reports failure", () => {
+    expect(parseTestResult("1 passed", 1)).toBe(false);
+    expect(parseTestResult("1 passed", undefined, true)).toBe(false);
+    expect(parseTestResult("1 passed", 0, true)).toBe(false);
+    expect(parseTestResult("1 passed, 1 failed", 0, false)).toBe(false);
+  });
+
+  test("requires a confirmed success before trusting a pass-looking message", () => {
+    expect(parseTestResult("1 passed", undefined)).toBeNull();
+    expect(parseTestResult("1 passed", undefined, false)).toBe(true);
+    expect(parseTestResult("1 passed", 0, false)).toBe(true);
+  });
+
   test("does not match bare 'passed' without numeric prefix", () => {
     expect(parseTestResult("All checks passed", 0)).toBe(true);
     expect(parseTestResult("All checks passed", undefined)).toBeNull();
